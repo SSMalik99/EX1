@@ -1,0 +1,58 @@
+1. authorization type
+    Inline authorization
+    if(Auth::guest()) {
+            return redirect("/login");
+        }
+        
+        if ($job->employer->user->isNot(Auth::user())){
+            abort(403);
+        }
+
+
+2. Gates :
+    use Illuminate\Support\Facades\Gate;
+    Gate::define('edit-job', function(User $user, Job $job){
+            return $job->employer->user->is($user);
+        });
+
+
+        if(Auth::guest()) {
+            return redirect("/login");
+        }
+        
+        // if ($job->employer->user->isNot(Auth::user())){
+        //     abort(403);
+        // }
+
+        Gate::authorize('edit-job', $job);
+
+
+
+3. Define Gates inside app service provider:
+     public function boot(): void
+    {
+        // To Disable the lazy loading we just need to do the below step
+        // Model::preventLazyLoading();
+
+        // Gate::define('edit-job', function(?User $user, Job $job){
+        Gate::define('edit-job', function(User $user, Job $job){
+            return $job->employer->user->is($user);
+        });
+    }
+    Gate::authorize('edit-job', $job);
+
+
+4. Can or cannot insteda of Gate::authorize() 
+    Auth::user()->can('edit-job', $job);
+    @can('edit-job', $job)
+        <p class="mt-6">
+            <x-button href="/jobs/{{ $job->id }}/edit">Edit Job</x-button>
+        </p>    
+    @endcan
+
+5. Middleware
+    Route::get('/jobs/{job}/edit', 'edit')->middleware(['auth', 'can:edit-job, job']);
+    Route::get('/jobs/{job}/edit', 'edit')->middleware('auth')->can("edit-job", 'job');
+
+6. Polices
+    
